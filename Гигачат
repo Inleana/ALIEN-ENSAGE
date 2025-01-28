@@ -1,0 +1,279 @@
+Звучит интересно! Давай начнем создавать твою программу на WPF с использованием C#. Я проведу тебя через все шаги, начиная от создания главного окна до реализации функционала каждой кнопки.
+
+### Шаг 1: Создание проекта WPF в Visual Studio
+
+1. Открой Visual Studio и создай новый проект.
+2. Выбери **WPF Application (.NET Framework)**.
+3. Назови проект и выбери место для сохранения.
+4. Нажми **Создать**.
+
+### Шаг 2: Создание главного окна
+
+Откроется `MainWindow.xaml`, где мы будем работать над интерфейсом. Добавим четыре кнопки и часы.
+
+#### XAML-код для главного окна:
+
+```xml
+<Window x:Class="WpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Главный Экран" Height="450" Width="800">
+    <Grid>
+        <!-- Часы -->
+        <TextBlock Name="Clock" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24"/>
+        
+        <!-- Кнопки -->
+        <Button Content="Музыка" Click="MusicButton_Click" Margin="50,100,0,0" HorizontalAlignment="Left" Width="75"/>
+        <Button Content="Книги" Click="BooksButton_Click" Margin="150,100,0,0" HorizontalAlignment="Left" Width="75"/>
+        <Button Content="Информация" Click="InfoButton_Click" Margin="250,100,0,0" HorizontalAlignment="Left" Width="75"/>
+        <Button Content="Калькулятор" Click="CalculatorButton_Click" Margin="350,100,0,0" HorizontalAlignment="Left" Width="75"/>
+    </Grid>
+</Window>
+```
+
+#### Код за кадром (`MainWindow.xaml.cs`):
+
+```csharp
+using System.Windows;
+using System.Windows.Threading;
+
+namespace WpfApp
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(1);
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            Clock.Text = DateTime.Now.ToString("HH:mm:ss");
+        }
+
+        // Обработчики кнопок
+        private void MusicButton_Click(object sender, RoutedEventArgs e)
+        {
+            var musicWindow = new MusicWindow();
+            musicWindow.ShowDialog();
+        }
+
+        private void BooksButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Функционал книг будет добавлен позже.");
+        }
+
+        private void InfoButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Функционал информации будет добавлен позже.");
+        }
+
+        private void CalculatorButton_Click(object sender, RoutedEventArgs e)
+        {
+            var calculatorWindow = new CalculatorWindow();
+            calculatorWindow.ShowDialog();
+        }
+    }
+}
+```
+
+### Шаг 3: Окно Музыки
+
+Создадим новое окно для музыки.
+
+#### XAML-код для окна музыки (`MusicWindow.xaml`):
+
+```xml
+<Window x:Class="WpfApp.MusicWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Музыка" Height="500" Width="700">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Левая панель -->
+        <ListView Grid.Column="0" Name="DriveDFiles" SelectionMode="Single"/>
+        
+        <!-- Правая панель -->
+        <ListView Grid.Column="1" Name="DriveEFiles" SelectionMode="Single"/>
+        
+        <!-- Кнопки -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Right">
+            <Button Content="Копировать" Click="CopyButton_Click" Margin="10"/>
+            <Button Content="Удалить" Click="DeleteButton_Click" Margin="10"/>
+            <Button Content="Создать Папку" Click="CreateFolderButton_Click" Margin="10"/>
+            <Button Content="Форматировать" Click="FormatButton_Click" Margin="10"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+#### Код за кадром (`MusicWindow.xaml.cs`):
+
+```csharp
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class MusicWindow : Window
+    {
+        public MusicWindow()
+        {
+            InitializeComponent();
+            LoadDrives();
+        }
+
+        private void LoadDrives()
+        {
+            string[] driveDFiles = Directory.GetFiles(@"D:\");
+            foreach (var file in driveDFiles)
+            {
+                DriveDFiles.Items.Add(Path.GetFileName(file));
+            }
+
+            string[] driveEFiles = Directory.GetFiles(@"E:\");
+            foreach (var file in driveEFiles)
+            {
+                DriveEFiles.Items.Add(Path.GetFileName(file));
+            }
+        }
+
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DriveDFiles.SelectedItem != null)
+            {
+                string sourcePath = @"D:\" + DriveDFiles.SelectedItem.ToString();
+                string destinationPath = @"E:\" + DriveDFiles.SelectedItem.ToString();
+                File.Copy(sourcePath, destinationPath, true);
+                LoadDrives(); // Обновляем списки файлов
+            }
+        }
+
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DriveEFiles.SelectedItem != null)
+            {
+                string pathToDelete = @"E:\" + DriveEFiles.SelectedItem.ToString();
+                File.Delete(pathToDelete);
+                LoadDrives(); // Обновляем списки файлов
+            }
+        }
+
+        private void CreateFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            string folderName = $"Музыка_{DateTime.Now:yyyyMMdd}";
+            string targetDirectory = Path.Combine(@"E:\", folderName);
+            Directory.CreateDirectory(targetDirectory);
+            LoadDrives(); // Обновляем списки файлов
+        }
+
+        private void FormatButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Форматирование в FAT32
+            try
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo("cmd.exe")
+                {
+                    Arguments = $"/C format E: /FS:FAT32",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+                using (Process process = Process.Start(startInfo))
+                {
+                    process.WaitForExit();
+                    MessageBox.Show("Диск E: успешно отформатирован в FAT32.", "Успех!", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при форматировании диска: {ex.Message}", "Ошибка!", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+}
+```
+
+### Шаг 4: Окно Калькулятора
+
+Создаем окно для калькулятора.
+
+#### XAML-код для окна калькулятора (`CalculatorWindow.xaml`):
+
+```xml
+<Window x:Class="WpfApp.CalculatorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Калькулятор" Height="300" Width="400">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Поле ввода первой даты -->
+        <Label Content="Первая дата:" Grid.Row="0" HorizontalAlignment="Left" Margin="20,10,0,0"/>
+        <TextBox Name="FirstDateInput" Grid.Row="0" Margin="120,10,0,0" Width="100"/>
+        
+        <!-- Поле ввода второй даты -->
+        <Label Content="Вторая дата:" Grid.Row="1" HorizontalAlignment="Left" Margin="20,10,0,0"/>
+        <TextBox Name="SecondDateInput" Grid.Row="1" Margin="120,10,0,0" Width="100"/>
+        
+        <!-- Результат расчета -->
+        <Button Content="Рассчитать" Grid.Row="2" Click="CalculateButton_Click" Margin="80,10,0,0" Width="75"/>
+        <TextBlock Name="Result" Grid.Row="2" Margin="170,15,0,0"/>
+    </Grid>
+</Window>
+```
+
+#### Код за кадром (`CalculatorWindow.xaml.cs`):
+
+```csharp
+using System;
+using System.Globalization;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class CalculatorWindow : Window
+    {
+        public CalculatorWindow()
+        {
+            InitializeComponent();
+        }
+
+        private void CalculateButton_Click(object sender, RoutedEventArgs e)
+        {
+            DateTime firstDate, secondDate;
+            bool isValidFirstDate = DateTime.TryParseExact(FirstDateInput.Text, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out firstDate);
+            bool isValidSecondDate = DateTime.TryParseExact(SecondDateInput.Text, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out secondDate);
+
+            if (!isValidFirstDate || !isValidSecondDate)
+            {
+                Result.Text = "Некорректный формат даты.";
+                return;
+            }
+
+            int daysDifference = (secondDate - firstDate).Days;
+            double ratio = Math.Round((double)daysDifference / 365, 2); // Рассчитываем отношение дней к году
+            Result.Text = $"{ratio}";
+        }
+    }
+}
+```
+
+### Заключение
+
+На этом этапе у нас есть готовое приложение с главным окном, окном для управления музыкой и калькулятором. Функции для кнопок "Книги" и "Информация" пока оставлены пустыми, но их можно реализовать аналогично другим окнам.
+
+Приятного программирования!
