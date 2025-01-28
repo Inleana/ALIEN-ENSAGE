@@ -1,0 +1,90 @@
+Хорошо, давайте реализуем функциональность для кнопки «Информация». Она будет похожа на функционал для кнопки «Книги», но без возможности копирования файлов.
+
+### Шаг 1: Создание нового окна для информации
+
+Создайте новое окно, которое будет содержать информацию и кнопку для ее открытия.
+
+#### XAML-код для окна информации (`InfoWindow.xaml`)
+
+```xml
+<Window x:Class="WpfApp.InfoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Информация" Height="500" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Список информационных файлов -->
+        <ListView Name="InfoFilesList" SelectionMode="Single"/>
+        
+        <!-- Панель с кнопкой -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+            <Button Content="Открыть" Click="OpenButton_Click" Margin="10"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+### Шаг 2: Логика для окна информации
+
+Напишите логику для загрузки списка информационных файлов и открытия выбранного файла.
+
+#### Код за кадром (`InfoWindow.xaml.cs`)
+
+```csharp
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class InfoWindow : Window
+    {
+        public InfoWindow()
+        {
+            InitializeComponent();
+            LoadInfoFiles();
+        }
+
+        private void LoadInfoFiles()
+        {
+            string[] infoFiles = Directory.GetFiles(@"D:\", "*.txt"); // Предположим, что информационные файлы имеют расширение .txt
+            InfoFilesList.ItemsSource = infoFiles.Select(f => Path.GetFileName(f)).ToArray();
+        }
+
+        private void OpenButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (InfoFilesList.SelectedItem != null)
+            {
+                string selectedFile = InfoFilesList.SelectedItem.ToString();
+                string fullPath = Path.Combine(@"D:\", selectedFile);
+                Process.Start(new ProcessStartInfo("notepad.exe", fullPath) { UseShellExecute = true });
+            }
+        }
+    }
+}
+```
+
+### Шаг 3: Обновление обработчика кнопки «Информация»
+
+В окне `MainWindow` изменим обработчик кнопки «Информация», чтобы открывать созданное нами окно для работы с информационными файлами.
+
+#### Обновленный обработчик кнопки «Информация» в `MainWindow.xaml.cs`
+
+```csharp
+private void InfoButton_Click(object sender, RoutedEventArgs e)
+{
+    var infoWindow = new InfoWindow();
+    infoWindow.ShowDialog();
+}
+```
+
+### Итоговый результат
+
+Теперь, после нажатия на кнопку «Информация» в главном окне, откроется новое окно со списком текстовых файлов. Пользователь сможет выбрать файл и открыть его в стандартном блокноте Windows.
+
+Вы можете изменить расширение файлов и программу для открытия в зависимости от ваших потребностей
