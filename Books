@@ -1,0 +1,206 @@
+Да, вы можете встроить просмотрщик PDF-файлов прямо в ваше WPF-приложение. Для этого вам потребуется использовать сторонние библиотеки, такие как **PDFiumViewer**, **PDF.js** или **Syncfusion PDF Viewer for WPF**.
+
+Рассмотрим использование **PDFiumViewer**, поскольку она бесплатна и проста в использовании.
+
+### Шаг 1: Установка пакета NuGet
+
+Откройте Package Manager Console в Visual Studio и выполните следующую команду:
+
+```powershell
+Install-Package PdfiumViewer
+```
+
+### Шаг 2: Добавление компонента просмотра PDF
+
+Откройте файл `BookWindow.xaml` и добавьте следующий компонент:
+
+```xml
+<Window x:Class="WpfApp.BookWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pdf="clr-namespace:PdfiumViewer;assembly=PdfiumViewer"
+        Title="Книги" Height="500" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Компонент для просмотра PDF -->
+        <pdf:PdfViewer x:Name="PdfViewerControl" Grid.Row="0"/>
+        
+        <!-- Панель с кнопками -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+            <Button Content="Копировать" Click="CopyButton_Click" Margin="10"/>
+            <Button Content="Просмотреть" Click="PreviewButton_Click" Margin="10"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+### Шаг 3: Логика для открытия PDF-файла
+
+Измените метод `OpenButton_Click` в файле `BookWindow.xaml.cs` следующим образом:
+
+```csharp
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using PdfiumViewer;
+
+namespace WpfApp
+{
+    public partial class BookWindow : Window
+    {
+        public BookWindow()
+        {
+            InitializeComponent();
+            LoadPdfFiles();
+        }
+
+        private void LoadPdfFiles()
+        {
+            string[] pdfFiles = Directory.GetFiles(@"D:\", "*.pdf");
+            PdfFilesList.ItemsSource = pdfFiles.Select(f => Path.GetFileName(f)).ToArray();
+        }
+
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PdfFilesList.SelectedItem != null)
+            {
+                string selectedFile = PdfFilesList.SelectedItem.ToString();
+                string sourcePath = Path.Combine(@"D:\", selectedFile);
+                string destinationPath = Path.Combine(@"E:\", selectedFile);
+                File.Copy(sourcePath, destinationPath, true);
+                MessageBox.Show("Файл успешно скопирован.", "Успешно!", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void PreviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PdfFilesList.SelectedItem != null)
+            {
+                string selectedFile = PdfFilesList.SelectedItem.ToString();
+                string fullPath = Path.Combine(@"D:\", selectedFile);
+                PdfDocument document = PdfDocument.Load(fullPath);
+                PdfViewerControl.Document = document;
+            }
+        }
+    }
+}
+```
+
+### Шаг 4: Тестирование
+
+Запустите приложение и выберите PDF-файл из списка. После нажатия на кнопку «Просмотреть» файл откроется внутри вашего приложения.
+
+Таким образом, вы сможете просматривать PDF-файлы непосредственно в вашем приложении, используя библиотеку PDFiumViewer
+
+
+
+
+
+Реализация функциональности для кнопки «Книги» включает создание нового окна, отображение PDF-файлов, возможность копирования выбранного файла в указанную директорию и открытие файла в программе PDF-XChange Viewer. Давайте рассмотрим, как это можно сделать пошагово.
+
+### Шаг 1: Создание нового окна для книги
+
+Сначала создадим новое окно для выбора и работы с файлами формата PDF.
+
+#### XAML-код для окна книги (`BookWindow.xaml`)
+
+```xml
+<Window x:Class="WpfApp.BookWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Книги" Height="500" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Список PDF-файлов -->
+        <ListView Name="PdfFilesList" SelectionMode="Single"/>
+        
+        <!-- Панель с кнопками -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+            <Button Content="Копировать" Click="CopyButton_Click" Margin="10"/>
+            <Button Content="Открыть" Click="OpenButton_Click" Margin="10"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+### Шаг 2: Логика для окна книги
+
+Теперь напишем логику для этого окна, которая позволит загрузить список PDF-файлов, скопировать выбранный файл и открыть его в PDF-XChange Viewer.
+
+#### Код за кадром (`BookWindow.xaml.cs`)
+
+```csharp
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class BookWindow : Window
+    {
+        public BookWindow()
+        {
+            InitializeComponent();
+            LoadPdfFiles();
+        }
+
+        private void LoadPdfFiles()
+        {
+            string[] pdfFiles = Directory.GetFiles(@"D:\", "*.pdf"); // Предположим, что PDF-файлы находятся на диске D
+            PdfFilesList.ItemsSource = pdfFiles.Select(f => Path.GetFileName(f)).ToArray();
+        }
+
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PdfFilesList.SelectedItem != null)
+            {
+                string selectedFile = PdfFilesList.SelectedItem.ToString();
+                string sourcePath = Path.Combine(@"D:\", selectedFile);
+                string destinationPath = Path.Combine(@"E:\", selectedFile);
+                File.Copy(sourcePath, destinationPath, true);
+                MessageBox.Show("Файл успешно скопирован.", "Успешно!", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void OpenButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PdfFilesList.SelectedItem != null)
+            {
+                string selectedFile = PdfFilesList.SelectedItem.ToString();
+                string fullPath = Path.Combine(@"D:\", selectedFile);
+                Process.Start("PDFXCview.exe", fullPath); // Предполагает, что PDF-XChange Viewer установлен и доступен по этому пути
+            }
+        }
+    }
+}
+```
+
+### Шаг 3: Обновление обработчика кнопки «Книги»
+
+В окне `MainWindow` изменим обработчик кнопки «Книги», чтобы открывать созданное нами окно для работы с книгами.
+
+#### Обновленный обработчик кнопки «Книги» в `MainWindow.xaml.cs`
+
+```csharp
+private void BooksButton_Click(object sender, RoutedEventArgs e)
+{
+    var bookWindow = new BookWindow();
+    bookWindow.ShowDialog();
+}
+```
+
+### Итоговый результат
+
+Теперь, после нажатия на кнопку «Книги» в главном окне, откроется новое окно со списком PDF-файлов. Пользователь сможет выбрать файл, скопировать его на диск E и открыть в программе PDF-XChange Viewer.
+
+Не забудьте проверить наличие установленного PDF-XChange Viewer и корректность пути к нему в коде.
