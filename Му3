@@ -1,0 +1,109 @@
+Для автоматического обновления списка файлов при изменениях на дисках D и E можно воспользоваться классом `FileSystemWatcher`. Этот класс позволяет отслеживать изменения в файловой системе и реагировать на них, выполняя определенные действия.
+
+### Шаги для добавления отслеживания изменений:
+
+1. Подключаем пространство имен `System.IO`.
+2. Создаем экземпляр класса `FileSystemWatcher` для каждого диска.
+3. Настраиваем события для отслеживания изменений.
+4. Реализуем методы обработки событий.
+
+Добавим эти изменения в код нашего окна `MusicWindow`.
+
+#### Изменения в `MusicWindow.xaml.cs`
+
+```csharp
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class MusicWindow : Window
+    {
+        private FileSystemWatcher _driveDWatcher;
+        private FileSystemWatcher _driveEWatcher;
+
+        public MusicWindow()
+        {
+            InitializeComponent();
+            LoadDrives();
+            SetupWatchers();
+        }
+
+        private void LoadDrives()
+        {
+            string[] driveDFiles = Directory.GetFiles(@"D:\");
+            foreach (var file in driveDFiles)
+            {
+                DriveDFiles.Items.Add(Path.GetFileName(file));
+            }
+
+            string[] driveEFiles = Directory.GetFiles(@"E:\");
+            foreach (var file in driveEFiles)
+            {
+                DriveEFiles.Items.Add(Path.GetFileName(file));
+            }
+        }
+
+        private void SetupWatchers()
+        {
+            // Настройка FileSystemWatcher для диска D
+            _driveDWatcher = new FileSystemWatcher
+            {
+                Path = @"D:\",
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName,
+                Filter = "*.*"
+            };
+            _driveDWatcher.Changed += OnChanged;
+            _driveDWatcher.Created += OnChanged;
+            _driveDWatcher.Deleted += OnChanged;
+            _driveDWatcher.Renamed += OnRenamed;
+            _driveDWatcher.EnableRaisingEvents = true;
+
+            // Настройка FileSystemWatcher для диска E
+            _driveEWatcher = new FileSystemWatcher
+            {
+                Path = @"E:\",
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName,
+                Filter = "*.*"
+            };
+            _driveEWatcher.Changed += OnChanged;
+            _driveEWatcher.Created += OnChanged;
+            _driveEWatcher.Deleted += OnChanged;
+            _driveEWatcher.Renamed += OnRenamed;
+            _driveEWatcher.EnableRaisingEvents = true;
+        }
+
+        private void OnChanged(object sender, FileSystemEventArgs e)
+        {
+            Dispatcher.Invoke(() => LoadDrives());
+        }
+
+        private void OnRenamed(object sender, RenamedEventArgs e)
+        {
+            Dispatcher.Invoke(() => LoadDrives());
+        }
+
+        // Остальные методы остаются без изменений...
+    }
+}
+```
+
+### Объяснение изменений:
+
+1. **Подключение пространства имен**:  
+   Мы добавили `using System.IO;`, чтобы иметь доступ к классу `FileSystemWatcher`.
+
+2. **Создание экземпляров `FileSystemWatcher`**:  
+   Для каждого диска (D и E) создается свой объект `FileSystemWatcher`. Эти объекты будут следить за изменениями в соответствующих каталогах.
+
+3. **Настройка параметров `FileSystemWatcher`**:  
+   Мы настроили свойства `Path`, `NotifyFilter` и `Filter` для каждого объекта. Это определяет, какие файлы и события нужно отслеживать.
+
+4. **Обработка событий**:  
+   Мы подписались на события `Changed`, `Created`, `Deleted` и `Renamed` для обоих объектов. При возникновении этих событий вызывается метод `LoadDrives()`, который заново загружает содержимое дисков в соответствующие ListViews.
+
+5. **Использование `Dispatcher.Invoke()`**:  
+   Поскольку обновление UI-элементов должно происходить в основном потоке, мы используем `Dispatcher.Invoke()`, чтобы гарантировать выполнение метода `LoadDrives()` в правильном контексте.
+
+Теперь, когда происходят любые изменения на дисках D и E (создание, удаление, переименование файлов), наше приложение автоматически обновляет списки файлов в соответствующих ListViews
