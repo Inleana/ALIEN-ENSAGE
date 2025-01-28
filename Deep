@@ -1,0 +1,286 @@
+Отличная идея! Давайте создадим программу на **WPF (C#)** с таким функционалом. Программа будет состоять из главного экрана с часами и четырьмя кнопками, а также отдельных окон для каждой функции. Я помогу вам написать код и объясню, как всё работает.
+
+---
+
+### Структура программы:
+1. **Главный экран**:
+   - Часы (текущее время).
+   - 4 кнопки:
+     - **Музыка**: Открывает окно для работы с музыкой.
+     - **Книги**: Пока пусто (можно добавить функционал позже).
+     - **Информация**: Пока пусто (можно добавить функционал позже).
+     - **Калькулятор Удо**: Открывает окно для расчёта дат.
+
+2. **Окно "Музыка"**:
+   - Разделение экрана на две части:
+     - Левая часть: Отображение музыки из директории `D:\`.
+     - Правая часть: Отображение содержимого директории `E:\`.
+   - 4 кнопки:
+     - **Копировать**: Копирует выбранный файл из `D:\` в `E:\`.
+     - **Удалить**: Удаляет выбранный файл из `E:\`.
+     - **Создать папку**: Создаёт папку в `E:\` с именем в формате `ГГГГ-ММ-ДД_Музыка`.
+     - **Форматировать**: Форматирует диск `E:\` в файловую систему FAT32.
+
+3. **Окно "Калькулятор Удо"**:
+   - Два поля для ввода дат (только цифры).
+   - Кнопка для расчёта разницы между датами.
+   - Результат: Отображение разницы в формате `1/2 2/3 3/4 4/5`.
+
+---
+
+### Реализация:
+
+#### 1. Главный экран (MainWindow.xaml):
+```xml
+<Window x:Class="MultiFunctionApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Главный экран" Height="400" Width="600">
+    <Grid>
+        <!-- Часы -->
+        <TextBlock x:Name="ClockText" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" FontSize="24"/>
+        
+        <!-- Кнопки -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Spacing="20">
+            <Button Content="Музыка" Width="100" Height="50" Click="MusicButton_Click"/>
+            <Button Content="Книги" Width="100" Height="50"/>
+            <Button Content="Информация" Width="100" Height="50"/>
+            <Button Content="Калькулятор Удо" Width="150" Height="50" Click="UdoCalculatorButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+#### 2. Логика главного экрана (MainWindow.xaml.cs):
+```csharp
+using System;
+using System.Windows;
+using System.Windows.Threading;
+
+namespace MultiFunctionApp
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            StartClock();
+        }
+
+        // Запуск часов
+        private void StartClock()
+        {
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(1);
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            ClockText.Text = DateTime.Now.ToString("HH:mm:ss");
+        }
+
+        // Открытие окна "Музыка"
+        private void MusicButton_Click(object sender, RoutedEventArgs e)
+        {
+            MusicWindow musicWindow = new MusicWindow();
+            musicWindow.ShowDialog();
+        }
+
+        // Открытие окна "Калькулятор Удо"
+        private void UdoCalculatorButton_Click(object sender, RoutedEventArgs e)
+        {
+            UdoCalculatorWindow udoCalculatorWindow = new UdoCalculatorWindow();
+            udoCalculatorWindow.ShowDialog();
+        }
+    }
+}
+```
+
+---
+
+#### 3. Окно "Музыка" (MusicWindow.xaml):
+```xml
+<Window x:Class="MultiFunctionApp.MusicWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Музыка" Height="400" Width="600">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Левая часть: D:\ -->
+        <ListView x:Name="DDriveList" Grid.Column="0" Margin="10"/>
+        
+        <!-- Правая часть: E:\ -->
+        <ListView x:Name="EDriveList" Grid.Column="1" Margin="10"/>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.ColumnSpan="2" VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+            <Button Content="Копировать" Width="100" Height="30" Margin="5" Click="CopyButton_Click"/>
+            <Button Content="Удалить" Width="100" Height="30" Margin="5" Click="DeleteButton_Click"/>
+            <Button Content="Создать папку" Width="100" Height="30" Margin="5" Click="CreateFolderButton_Click"/>
+            <Button Content="Форматировать" Width="100" Height="30" Margin="5" Click="FormatButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+#### 4. Логика окна "Музыка" (MusicWindow.xaml.cs):
+```csharp
+using System;
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+namespace MultiFunctionApp
+{
+    public partial class MusicWindow : Window
+    {
+        public MusicWindow()
+        {
+            InitializeComponent();
+            LoadDirectories();
+        }
+
+        // Загрузка содержимого директорий
+        private void LoadDirectories()
+        {
+            try
+            {
+                DDriveList.ItemsSource = Directory.GetFiles("D:\\").Select(Path.GetFileName);
+                EDriveList.ItemsSource = Directory.GetFiles("E:\\").Select(Path.GetFileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+        // Копирование файла
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedFile = DDriveList.SelectedItem as string;
+            if (selectedFile != null)
+            {
+                try
+                {
+                    File.Copy(Path.Combine("D:\\", selectedFile), Path.Combine("E:\\", selectedFile));
+                    LoadDirectories();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}");
+                }
+            }
+        }
+
+        // Удаление файла
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedFile = EDriveList.SelectedItem as string;
+            if (selectedFile != null)
+            {
+                try
+                {
+                    File.Delete(Path.Combine("E:\\", selectedFile));
+                    LoadDirectories();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}");
+                }
+            }
+        }
+
+        // Создание папки
+        private void CreateFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            string folderName = $"{DateTime.Now:yyyy-MM-dd}_Музыка";
+            try
+            {
+                Directory.CreateDirectory(Path.Combine("E:\\", folderName));
+                LoadDirectories();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+        // Форматирование диска
+        private void FormatButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Функция форматирования пока не реализована.");
+        }
+    }
+}
+```
+
+---
+
+#### 5. Окно "Калькулятор Удо" (UdoCalculatorWindow.xaml):
+```xml
+<Window x:Class="MultiFunctionApp.UdoCalculatorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Калькулятор Удо" Height="300" Width="400">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+            <TextBox x:Name="Date1TextBox" Width="200" PlaceholderText="Введите первую дату (ГГГГ-ММ-ДД)"/>
+            <TextBox x:Name="Date2TextBox" Width="200" PlaceholderText="Введите вторую дату (ГГГГ-ММ-ДД)"/>
+            <Button Content="Рассчитать" Width="100" Click="CalculateButton_Click"/>
+            <TextBlock x:Name="ResultText" FontSize="16"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+#### 6. Логика окна "Калькулятор Удо" (UdoCalculatorWindow.xaml.cs):
+```csharp
+using System;
+using System.Windows;
+
+namespace MultiFunctionApp
+{
+    public partial class UdoCalculatorWindow : Window
+    {
+        public UdoCalculatorWindow()
+        {
+            InitializeComponent();
+        }
+
+        // Расчёт разницы между датами
+        private void CalculateButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DateTime.TryParse(Date1TextBox.Text, out DateTime date1) && DateTime.TryParse(Date2TextBox.Text, out DateTime date2))
+            {
+                TimeSpan difference = date2 - date1;
+                ResultText.Text = $"{difference.Days / 1} {difference.Days / 2} {difference.Days / 3} {difference.Days / 4}";
+            }
+            else
+            {
+                MessageBox.Show("Некорректный формат даты. Используйте ГГГГ-ММ-ДД.");
+            }
+        }
+    }
+}
+```
+
+---
+
+### Что дальше:
+1. **Форматирование диска**:
+   - Для форматирования диска можно использовать команду `format` через `Process.Start` (требуются права администратора).
+
+2. **Доработка интерфейса**:
+   - Добавьте проверки на существование директорий `D:\` и `E:\`.
+   - Улучшите отображение ошибок.
+
+3. **Тестирование**:
+   - Проверьте работу программы на реальных данных.
+
+Если нужно что-то доработать или добавить, дайте знать! 
