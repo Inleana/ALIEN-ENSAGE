@@ -1,0 +1,78 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+
+namespace FIOConverter
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        private void ConvertButton_Click(object sender, RoutedEventArgs e)
+        {
+            string input = InputBox.Text;
+            if (string.IsNullOrEmpty(input))
+            {
+                MessageBox.Show("Введите ФИО!");
+                return;
+            }
+
+            // Разделяем ввод на строки
+            string[] fioList = input.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Ограничиваем количество ФИО до 100
+            if (fioList.Length > 100)
+            {
+                MessageBox.Show("Максимальное количество ФИО — 100.");
+                return;
+            }
+
+            // Очищаем список результатов
+            OutputList.Items.Clear();
+
+            // Обрабатываем каждое ФИО
+            foreach (var fio in fioList)
+            {
+                string[] parts = fio.Trim().Split(' ');
+                if (parts.Length != 3)
+                {
+                    MessageBox.Show($"Некорректное ФИО: {fio}. ФИО должно состоять из трёх частей.");
+                    continue;
+                }
+
+                string lastName = parts[0];  // Фамилия
+                string firstName = parts[1]; // Имя
+                string middleName = parts[2];// Отчество
+
+                // Пример изменения падежей (упрощённый вариант)
+                string nominative = $"{lastName} {firstName} {middleName}"; // Именительный
+                string genitive = $"{lastName}а {firstName}а {middleName}а"; // Родительный
+                string dative = $"{lastName}у {firstName}у {middleName}у";   // Дательный
+                string accusative = $"{lastName}а {firstName}а {middleName}а"; // Винительный
+
+                // Добавляем результат в список
+                OutputList.Items.Add(new FIOData
+                {
+                    FIO = fio,
+                    Nominative = nominative,
+                    Genitive = genitive,
+                    Dative = dative,
+                    Accusative = accusative
+                });
+            }
+        }
+    }
+
+    // Класс для хранения данных о ФИО
+    public class FIOData
+    {
+        public string FIO { get; set; }          // Исходное ФИО
+        public string Nominative { get; set; }   // Именительный
+        public string Genitive { get; set; }     // Родительный
+        public string Dative { get; set; }       // Дательный
+        public string Accusative { get; set; }   // Винительный
+    }
